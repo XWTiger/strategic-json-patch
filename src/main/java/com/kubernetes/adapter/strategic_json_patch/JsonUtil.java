@@ -50,12 +50,13 @@ public class JsonUtil {
 
                                 boolean exist = false;
                                 //check exist from  strategic, check exist from target node
-
                                 int index = 0;
                                 for (JsonNode orderNode : orderArray) {
+
                                     if (Objects.nonNull(node.get("$patch"))) {
                                         //delete
                                         ArrayNode tArray = (ArrayNode) target.get(buffer[1]);
+
                                         int count = 0;
                                         for (JsonNode jsonObj : tArray) {
                                             if (jsonObj.get(descField).asText().equals(node.get(descField).asText())) {
@@ -68,6 +69,9 @@ public class JsonUtil {
                                     } else if (orderNode.get(descField).asText().equals(node.get(descField).asText())) {
                                         //add or replace
                                         ArrayNode tArray = (ArrayNode) target.get(buffer[1]);
+                                        if (index >= tArray.size()) {
+                                            break;
+                                        }
                                         JsonNode tnode = tArray.get(index);
                                         if (tnode.get(descField).asText().equals(node.get(descField).asText())) {
                                             //replace
@@ -149,134 +153,9 @@ public class JsonUtil {
         }
     }
 
-   /* public static void main(String[] args) throws JsonProcessingException {
-        String buffer = "{\n" +
-                "  \"spec\": {\n" +
-                "    \"$setElementOrder/ports\": [\n" +
-                "      {\n" +
-                "        \"port\": 3306\n" +
-                "      },\n" +
-                "      {\n" +
-                "        \"port\": 82\n" +
-                "      }\n" +
-                "    ],\n" +
-                "    \"ports\": [\n" +
-                "      {\n" +
-                "        \"name\": \"http3\",\n" +
-                "        \"nodePort\": 30404,\n" +
-                "        \"port\": 82,\n" +
-                "        \"protocol\": \"TCP\",\n" +
-                "        \"targetPort\": 82\n" +
-                "      },\n" +
-                "      {\n" +
-                "        \"$patch\": \"delete\",\n" +
-                "        \"port\": 81\n" +
-                "      }\n" +
-                "    ]\n" +
-                "  }\n" +
-                "}";
-        String targetJson = "{\n" +
-                "  \"metadata\": {\n" +
-                "    \"uid\": \"30ae5ed3-ea52-44c5-afa0-5e0f67b2d1ef\",\n" +
-                "    \"managedFields\": [\n" +
-                "      {\n" +
-                "        \"apiVersion\": \"v1\",\n" +
-                "        \"manager\": \"kubectl-client-side-apply\",\n" +
-                "        \"fieldsV1\": {\n" +
-                "          \"f:metadata\": {\n" +
-                "            \"f:annotations\": {\n" +
-                "              \"f:ssc/external-net-id\": {},\n" +
-                "              \"f:ssc/network-id\": {},\n" +
-                "              \"f:kubectl.kubernetes.io/last-applied-configuration\": {},\n" +
-                "              \".\": {},\n" +
-                "              \"f:ssc/subnet-id\": {}\n" +
-                "            },\n" +
-                "            \"f:labels\": {\n" +
-                "              \"f:app\": {},\n" +
-                "              \".\": {}\n" +
-                "            }\n" +
-                "          },\n" +
-                "          \"f:spec\": {\n" +
-                "            \"f:type\": {},\n" +
-                "            \"f:selector\": {\n" +
-                "              \"f:app\": {},\n" +
-                "              \".\": {}\n" +
-                "            },\n" +
-                "            \"f:sessionAffinity\": {},\n" +
-                "            \"f:externalTrafficPolicy\": {},\n" +
-                "            \"f:ports\": {\n" +
-                "              \"k:{\\\"port\\\":81,\\\"protocol\\\":\\\"TCP\\\"}\": {\n" +
-                "                \"f:port\": {},\n" +
-                "                \"f:targetPort\": {},\n" +
-                "                \"f:protocol\": {},\n" +
-                "                \"f:name\": {},\n" +
-                "                \".\": {}\n" +
-                "              },\n" +
-                "              \"k:{\\\"port\\\":3306,\\\"protocol\\\":\\\"TCP\\\"}\": {\n" +
-                "                \"f:port\": {},\n" +
-                "                \"f:targetPort\": {},\n" +
-                "                \"f:protocol\": {},\n" +
-                "                \"f:name\": {},\n" +
-                "                \".\": {}\n" +
-                "              },\n" +
-                "              \".\": {}\n" +
-                "            }\n" +
-                "          }\n" +
-                "        },\n" +
-                "        \"time\": \"2021-12-30T09:52:51Z\",\n" +
-                "        \"operation\": \"Update\",\n" +
-                "        \"fieldsType\": \"FieldsV1\"\n" +
-                "      }\n" +
-                "    ],\n" +
-                "    \"resourceVersion\": \"1049575\",\n" +
-                "    \"name\": \"svc-test\",\n" +
-                "    \"namespace\": \"wdh\",\n" +
-                "    \"creationTimestamp\": \"2021-12-30T09:52:51Z\",\n" +
-                "    \"annotations\": {\n" +
-                "      \"ssc/subnet-id\": \"c07fda56-a0dd-4717-9697-25294d558f91\",\n" +
-                "      \"ssc/external-net-id\": \"cfed230f-eb66-4f47-93ac-d3550a4774fa\",\n" +
-                "      \"kubectl.kubernetes.io/last-applied-configuration\": \"{\\\"apiVersion\\\":\\\"v1\\\",\\\"kind\\\":\\\"Service\\\",\\\"metadata\\\":{\\\"annotations\\\":{\\\"ssc/external-net-id\\\":\\\"cfed230f-eb66-4f47-93ac-d3550a4774fa\\\",\\\"ssc/network-id\\\":\\\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\\\",\\\"ssc/subnet-id\\\":\\\"c07fda56-a0dd-4717-9697-25294d558f91\\\"},\\\"labels\\\":{\\\"app\\\":\\\"svc-test\\\"},\\\"name\\\":\\\"svc-test\\\",\\\"namespace\\\":\\\"wdh\\\"},\\\"spec\\\":{\\\"ports\\\":[{\\\"name\\\":\\\"http\\\",\\\"nodePort\\\":30526,\\\"port\\\":3306,\\\"targetPort\\\":3306},{\\\"name\\\":\\\"http2\\\",\\\"nodePort\\\":30525,\\\"port\\\":81,\\\"targetPort\\\":81}],\\\"selector\\\":{\\\"app\\\":\\\"svc-test\\\"},\\\"type\\\":\\\"NodePort\\\"}}\\n\",\n" +
-                "      \"ssc/network-id\": \"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\"\n" +
-                "    },\n" +
-                "    \"selfLink\": \"/api/v1/namespaces/wdh/services/svc-test\",\n" +
-                "    \"labels\": {\n" +
-                "      \"app\": \"svc-test\"\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"apiVersion\": \"v1\",\n" +
-                "  \"kind\": \"Service\",\n" +
-                "  \"spec\": {\n" +
-                "    \"clusterIPs\": [\n" +
-                "      \"172.22.7.117\"\n" +
-                "    ],\n" +
-                "    \"sessionAffinity\": \"None\",\n" +
-                "    \"selector\": {\n" +
-                "      \"app\": \"svc-test\"\n" +
-                "    },\n" +
-                "    \"externalTrafficPolicy\": \"Cluster\",\n" +
-                "    \"ports\": [\n" +
-                "      {\n" +
-                "        \"protocol\": \"TCP\",\n" +
-                "        \"port\": 3306,\n" +
-                "        \"name\": \"http\",\n" +
-                "        \"targetPort\": 3306,\n" +
-                "        \"nodePort\": 30526\n" +
-                "      },\n" +
-                "      {\n" +
-                "        \"protocol\": \"TCP\",\n" +
-                "        \"port\": 81,\n" +
-                "        \"name\": \"http2\",\n" +
-                "        \"targetPort\": 81,\n" +
-                "        \"nodePort\": 30525\n" +
-                "      }\n" +
-                "    ],\n" +
-                "    \"type\": \"NodePort\",\n" +
-                "    \"clusterIP\": \"172.22.7.117\"\n" +
-                "  },\n" +
-                "  \"status\": {\n" +
-                "    \"loadBalancer\": {}\n" +
-                "  }\n" +
-                "}";
-        applyStrategicJsonPatchToJsonPatch(buffer, new ObjectMapper().readTree(targetJson));
-    }*/
+    public static void main(String[] args) throws JsonProcessingException {
+        String buffer = "{\"spec\":{\"$setElementOrder/ports\":[{\"port\":3306},{\"port\":81}],\"ports\":[{\"nodePort\":30402,\"port\":81}]}}";
+        String targetJson = "{\"metadata\":{\"uid\":\"a9339e9c-1e2e-4ea2-a6ef-bd27bd36008f\",\"managedFields\":[{\"apiVersion\":\"v1\",\"manager\":\"kubectl-client-side-apply\",\"fieldsV1\":{\"f:metadata\":{\"f:annotations\":{\"f:ssc/external-net-id\":{},\"f:ssc/network-id\":{},\"f:kubectl.kubernetes.io/last-applied-configuration\":{},\".\":{},\"f:ssc/subnet-id\":{}},\"f:labels\":{\"f:app\":{},\".\":{}}},\"f:spec\":{\"f:type\":{},\"f:selector\":{\"f:app\":{},\".\":{}},\"f:sessionAffinity\":{},\"f:externalTrafficPolicy\":{},\"f:ports\":{\"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\":{\"f:port\":{},\"f:targetPort\":{},\"f:protocol\":{},\"f:name\":{},\".\":{}},\".\":{}}}},\"time\":\"2022-01-04T06:58:01Z\",\"operation\":\"Update\",\"fieldsType\":\"FieldsV1\"}],\"resourceVersion\":\"7611902\",\"name\":\"svc-test3\",\"namespace\":\"wdh\",\"creationTimestamp\":\"2022-01-04T06:58:01Z\",\"annotations\":{\"ssc/subnet-id\":\"c07fda56-a0dd-4717-9697-25294d558f91\",\"ssc/external-net-id\":\"cfed230f-eb66-4f47-93ac-d3550a4774fa\",\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"v1\\\",\\\"kind\\\":\\\"Service\\\",\\\"metadata\\\":{\\\"annotations\\\":{\\\"ssc/external-net-id\\\":\\\"cfed230f-eb66-4f47-93ac-d3550a4774fa\\\",\\\"ssc/network-id\\\":\\\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\\\",\\\"ssc/subnet-id\\\":\\\"c07fda56-a0dd-4717-9697-25294d558f91\\\"},\\\"labels\\\":{\\\"app\\\":\\\"svc-test3\\\"},\\\"name\\\":\\\"svc-test3\\\",\\\"namespace\\\":\\\"wdh\\\"},\\\"spec\\\":{\\\"ports\\\":[{\\\"name\\\":\\\"http2\\\",\\\"nodePort\\\":30525,\\\"port\\\":80,\\\"targetPort\\\":81}],\\\"selector\\\":{\\\"app\\\":\\\"svc-test3\\\"},\\\"type\\\":\\\"NodePort\\\"}}\\n\",\"ssc/network-id\":\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\"},\"selfLink\":\"/api/v1/namespaces/wdh/services/svc-test3\",\"labels\":{\"app\":\"svc-test3\"}},\"apiVersion\":\"v1\",\"kind\":\"Service\",\"spec\":{\"clusterIPs\":[\"172.22.7.95\"],\"sessionAffinity\":\"None\",\"selector\":{\"app\":\"svc-test3\"},\"externalTrafficPolicy\":\"Cluster\",\"ports\":[{\"protocol\":\"TCP\",\"port\":80,\"name\":\"http2\",\"targetPort\":81,\"nodePort\":30525}],\"type\":\"NodePort\",\"clusterIP\":\"172.22.7.95\"},\"status\":{\"loadBalancer\":{}}}";
+        applyStrategicJsonPatchToJson(buffer, new ObjectMapper().readTree(targetJson));
+    }
 }
