@@ -4,8 +4,8 @@ HELP.md
 !**/src/test/**
 
 target/*
-maven-archiver
-maven-status
+maven-archiver/*
+maven-status/*
 ### STS ###
 .apt_generated
 .classpath
