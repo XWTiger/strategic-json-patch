@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
@@ -41,11 +42,12 @@ public class JsonUtil {
                             JsonNode order = strategicNode.get(field);
                             ArrayNode orderArray = (ArrayNode) order;
                             String descField =  orderArray.get(0).fieldNames().next();
-                            //get des
+                            //get des filed, like $setElementOrder/ports
                             String [] buffer = field.split("/");
                             JsonNode desNode = strategicNode.get(buffer[1]);
                             ArrayNode arrayNode = (ArrayNode) desNode;
                             JsonNode target = findValueByPath((String) maps.get("path"), targetNode);
+                            ArrayNode orderedArray = JsonNodeFactory.instance.arrayNode();// to order the new arr
                             for (JsonNode node : arrayNode) {
 
                                 boolean exist = false;
@@ -75,16 +77,23 @@ public class JsonUtil {
                                         JsonNode tnode = tArray.get(index);
                                         if (tnode.get(descField).asText().equals(node.get(descField).asText())) {
                                             //replace
+                                            JsonNode replaced = JsonNodeFactory.instance.objectNode();
                                             copyFromTo(node, tnode);
+                                            copyFromTo(tnode, replaced);
+                                            orderedArray.add(replaced);
 
                                         } else {
                                             //add
                                             tArray.add(node);
+                                            orderedArray.add(node);
                                         }
                                         break;
                                     }
                                     index++;
                                 }
+                                ObjectNode targetObj = (ObjectNode) target;
+                                targetObj.remove(buffer[1]);
+                                targetObj.put(buffer[1], orderedArray);
 
                             }
                             break;
