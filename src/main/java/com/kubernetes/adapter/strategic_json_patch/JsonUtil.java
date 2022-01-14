@@ -45,28 +45,21 @@ public class JsonUtil {
                             //get des filed, like $setElementOrder/ports
                             String [] buffer = field.split("/");
                             JsonNode desNode = strategicNode.get(buffer[1]);
+                            if (Objects.isNull(desNode)) {
+                                return null;
+                            }
                             ArrayNode arrayNode = (ArrayNode) desNode;
                             JsonNode target = findValueByPath((String) maps.get("path"), targetNode);
                             ArrayNode orderedArray = JsonNodeFactory.instance.arrayNode();// to order the new arr
-                            for (JsonNode node : arrayNode) {
+                            for (JsonNode orderNode : orderArray) {
 
-                                boolean exist = false;
                                 //check exist from  strategic, check exist from target node
                                 int index = 0;
-                                for (JsonNode orderNode : orderArray) {
+                                for (JsonNode node :  arrayNode) {
 
                                     if (Objects.nonNull(node.get("$patch"))) {
-                                        //delete
-                                        ArrayNode tArray = (ArrayNode) target.get(buffer[1]);
-
-                                        int count = 0;
-                                        for (JsonNode jsonObj : tArray) {
-                                            if (jsonObj.get(descField).asText().equals(node.get(descField).asText())) {
-                                                tArray.remove(count);
-                                                break;
-                                            }
-                                            count++;
-                                        }
+                                        //delete do nothing
+                                        break;
 
                                     } else if (orderNode.get(descField).asText().equals(node.get(descField).asText())) {
                                         //add or replace
@@ -88,14 +81,24 @@ public class JsonUtil {
                                             orderedArray.add(node);
                                         }
                                         break;
+                                    } else {
+                                        //the node exist in target node
+                                        ArrayNode fromTarget = (ArrayNode) target.get(buffer[1]);
+                                        for (JsonNode childNode : fromTarget) {
+                                            if (childNode.get(descField).asText().equals(orderNode.get(descField).asText())) {
+                                                orderedArray.add(childNode.deepCopy());
+                                                break;
+                                            }
+                                        }
                                     }
                                     index++;
                                 }
-                                ObjectNode targetObj = (ObjectNode) target;
-                                targetObj.remove(buffer[1]);
-                                targetObj.put(buffer[1], orderedArray);
 
                             }
+
+                            ObjectNode targetObj = (ObjectNode) target;
+                            targetObj.remove(buffer[1]);
+                            targetObj.put(buffer[1], orderedArray);
                             break;
                         }
                     }
@@ -163,8 +166,8 @@ public class JsonUtil {
     }
 
     public static void main(String[] args) throws JsonProcessingException {
-        String buffer = "{\"spec\":{\"$setElementOrder/ports\":[{\"port\":3306},{\"port\":81}],\"ports\":[{\"nodePort\":30402,\"port\":81}]}}";
-        String targetJson = "{\"metadata\":{\"uid\":\"a9339e9c-1e2e-4ea2-a6ef-bd27bd36008f\",\"managedFields\":[{\"apiVersion\":\"v1\",\"manager\":\"kubectl-client-side-apply\",\"fieldsV1\":{\"f:metadata\":{\"f:annotations\":{\"f:ssc/external-net-id\":{},\"f:ssc/network-id\":{},\"f:kubectl.kubernetes.io/last-applied-configuration\":{},\".\":{},\"f:ssc/subnet-id\":{}},\"f:labels\":{\"f:app\":{},\".\":{}}},\"f:spec\":{\"f:type\":{},\"f:selector\":{\"f:app\":{},\".\":{}},\"f:sessionAffinity\":{},\"f:externalTrafficPolicy\":{},\"f:ports\":{\"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\":{\"f:port\":{},\"f:targetPort\":{},\"f:protocol\":{},\"f:name\":{},\".\":{}},\".\":{}}}},\"time\":\"2022-01-04T06:58:01Z\",\"operation\":\"Update\",\"fieldsType\":\"FieldsV1\"}],\"resourceVersion\":\"7611902\",\"name\":\"svc-test3\",\"namespace\":\"wdh\",\"creationTimestamp\":\"2022-01-04T06:58:01Z\",\"annotations\":{\"ssc/subnet-id\":\"c07fda56-a0dd-4717-9697-25294d558f91\",\"ssc/external-net-id\":\"cfed230f-eb66-4f47-93ac-d3550a4774fa\",\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"v1\\\",\\\"kind\\\":\\\"Service\\\",\\\"metadata\\\":{\\\"annotations\\\":{\\\"ssc/external-net-id\\\":\\\"cfed230f-eb66-4f47-93ac-d3550a4774fa\\\",\\\"ssc/network-id\\\":\\\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\\\",\\\"ssc/subnet-id\\\":\\\"c07fda56-a0dd-4717-9697-25294d558f91\\\"},\\\"labels\\\":{\\\"app\\\":\\\"svc-test3\\\"},\\\"name\\\":\\\"svc-test3\\\",\\\"namespace\\\":\\\"wdh\\\"},\\\"spec\\\":{\\\"ports\\\":[{\\\"name\\\":\\\"http2\\\",\\\"nodePort\\\":30525,\\\"port\\\":80,\\\"targetPort\\\":81}],\\\"selector\\\":{\\\"app\\\":\\\"svc-test3\\\"},\\\"type\\\":\\\"NodePort\\\"}}\\n\",\"ssc/network-id\":\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\"},\"selfLink\":\"/api/v1/namespaces/wdh/services/svc-test3\",\"labels\":{\"app\":\"svc-test3\"}},\"apiVersion\":\"v1\",\"kind\":\"Service\",\"spec\":{\"clusterIPs\":[\"172.22.7.95\"],\"sessionAffinity\":\"None\",\"selector\":{\"app\":\"svc-test3\"},\"externalTrafficPolicy\":\"Cluster\",\"ports\":[{\"protocol\":\"TCP\",\"port\":80,\"name\":\"http2\",\"targetPort\":81,\"nodePort\":30525}],\"type\":\"NodePort\",\"clusterIP\":\"172.22.7.95\"},\"status\":{\"loadBalancer\":{}}}";
+        String buffer = "{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"v1\\\",\\\"kind\\\":\\\"Service\\\",\\\"metadata\\\":{\\\"annotations\\\":{\\\"ssc/external-net-id\\\":\\\"cfed230f-eb66-4f47-93ac-d3550a4774fa\\\",\\\"ssc/float-ip\\\":\\\"172.22.7.85\\\",\\\"ssc/network-id\\\":\\\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\\\",\\\"ssc/subnet-id\\\":\\\"c07fda56-a0dd-4717-9697-25294d558f91\\\"},\\\"labels\\\":{\\\"app\\\":\\\"svc-test3\\\",\\\"name\\\":\\\"svc\\\"},\\\"name\\\":\\\"svc-test\\\",\\\"namespace\\\":\\\"wdh\\\"},\\\"spec\\\":{\\\"ports\\\":[{\\\"name\\\":\\\"http2\\\",\\\"port\\\":878,\\\"targetPort\\\":3307},{\\\"name\\\":\\\"mysql-port\\\",\\\"port\\\":3306,\\\"targetPort\\\":3306}],\\\"selector\\\":{\\\"app\\\":\\\"svc-test\\\"},\\\"type\\\":\\\"NodePort\\\"}}\\n\"}},\"spec\":{\"$setElementOrder/ports\":[{\"port\":878},{\"port\":3306}],\"ports\":[{\"name\":\"http2\",\"port\":878,\"targetPort\":3307},{\"$patch\":\"delete\",\"port\":8878}]}}";
+        String targetJson = "{\"metadata\":{\"uid\":\"d5e5da42-1913-4968-9b26-8c2fbd8506f5\",\"managedFields\":[{\"apiVersion\":\"v1\",\"manager\":\"kubectl-client-side-apply\",\"fieldsV1\":{\"f:metadata\":{\"f:annotations\":{\"f:ssc/external-net-id\":{},\"f:ssc/float-ip\":{},\"f:ssc/network-id\":{},\"f:kubectl.kubernetes.io/last-applied-configuration\":{},\".\":{},\"f:ssc/subnet-id\":{}},\"f:labels\":{\"f:app\":{},\"f:name\":{},\".\":{}}},\"f:spec\":{\"f:type\":{},\"f:selector\":{\"f:app\":{},\".\":{}},\"f:sessionAffinity\":{},\"f:externalTrafficPolicy\":{},\"f:ports\":{\"k:{\\\"port\\\":8878,\\\"protocol\\\":\\\"TCP\\\"}\":{\"f:port\":{},\"f:targetPort\":{},\"f:protocol\":{},\"f:name\":{},\".\":{}},\"k:{\\\"port\\\":3306,\\\"protocol\\\":\\\"TCP\\\"}\":{\"f:port\":{},\"f:targetPort\":{},\"f:protocol\":{},\"f:name\":{},\".\":{}},\".\":{}}}},\"time\":\"2022-01-11T08:49:42Z\",\"operation\":\"Update\",\"fieldsType\":\"FieldsV1\"}],\"resourceVersion\":\"18620455\",\"name\":\"svc-test\",\"namespace\":\"wdh\",\"creationTimestamp\":\"2022-01-11T08:49:42Z\",\"annotations\":{\"ssc/subnet-id\":\"c07fda56-a0dd-4717-9697-25294d558f91\",\"ssc/float-ip\":\"172.22.7.85\",\"ssc/external-net-id\":\"cfed230f-eb66-4f47-93ac-d3550a4774fa\",\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"v1\\\",\\\"kind\\\":\\\"Service\\\",\\\"metadata\\\":{\\\"annotations\\\":{\\\"ssc/external-net-id\\\":\\\"cfed230f-eb66-4f47-93ac-d3550a4774fa\\\",\\\"ssc/float-ip\\\":\\\"172.22.7.85\\\",\\\"ssc/network-id\\\":\\\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\\\",\\\"ssc/subnet-id\\\":\\\"c07fda56-a0dd-4717-9697-25294d558f91\\\"},\\\"labels\\\":{\\\"app\\\":\\\"svc-test3\\\",\\\"name\\\":\\\"svc\\\"},\\\"name\\\":\\\"svc-test\\\",\\\"namespace\\\":\\\"wdh\\\"},\\\"spec\\\":{\\\"ports\\\":[{\\\"name\\\":\\\"http2\\\",\\\"port\\\":8878,\\\"targetPort\\\":3307},{\\\"name\\\":\\\"mysql-port\\\",\\\"port\\\":3306,\\\"targetPort\\\":3306}],\\\"selector\\\":{\\\"app\\\":\\\"svc-test\\\"},\\\"type\\\":\\\"NodePort\\\"}}\\n\",\"ssc/network-id\":\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\"},\"selfLink\":\"/api/v1/namespaces/wdh/services/svc-test\",\"labels\":{\"app\":\"svc-test3\",\"name\":\"svc\"}},\"apiVersion\":\"v1\",\"kind\":\"Service\",\"spec\":{\"clusterIPs\":[\"172.22.7.85\"],\"sessionAffinity\":\"None\",\"selector\":{\"app\":\"svc-test\"},\"externalTrafficPolicy\":\"Cluster\",\"ports\":[{\"protocol\":\"TCP\",\"port\":8878,\"name\":\"http2\",\"targetPort\":3307,\"nodePort\":31082},{\"protocol\":\"TCP\",\"port\":3306,\"name\":\"mysql-port\",\"targetPort\":3306,\"nodePort\":61823}],\"type\":\"NodePort\",\"clusterIP\":\"172.22.7.85\"},\"status\":{\"loadBalancer\":{}}}";
         applyStrategicJsonPatchToJson(buffer, new ObjectMapper().readTree(targetJson));
     }
 }
