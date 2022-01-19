@@ -52,10 +52,19 @@ public class JsonUtil {
                             ArrayNode arrayNode = (ArrayNode) desNode;
                             JsonNode target = findValueByPath((String) maps.get("path"), targetNode);
                             ArrayNode orderedArray = JsonNodeFactory.instance.arrayNode();// to order the new arr
-                            int index = 0;
                             for (JsonNode orderNode : orderArray) {
+                                int index = 0;
+                                //check exist from  strategic and  exist from target node
 
-                                //check exist from  strategic, check exist from target node
+                                if (arrayNode.size() <= 0) {
+                                    ArrayNode fromTarget = (ArrayNode) target.get(buffer[1]);
+                                    for (JsonNode childNode : fromTarget) {
+                                        if (childNode.get(descField).asText().equals(orderNode.get(descField).asText())) {
+                                            orderedArray.add(childNode.deepCopy());
+                                            break;
+                                        }
+                                    }
+                                }
                                 for (JsonNode node : arrayNode) {
 
                                     if (Objects.nonNull(node.get("$patch"))) {
@@ -68,8 +77,8 @@ public class JsonUtil {
                                         if (index >= tArray.size()) {
                                             break;
                                         }
-                                        JsonNode tnode = tArray.get(index);
-                                        if (tnode.get(descField).asText().equals(node.get(descField).asText())) {
+                                        JsonNode tnode = findNodeFromTarget(tArray, node, descField);
+                                        if (Objects.nonNull(tnode)) {
                                             //replace
                                             JsonNode replaced = JsonNodeFactory.instance.objectNode();
                                             copyFromTo(node, tnode);
@@ -81,6 +90,7 @@ public class JsonUtil {
                                             tArray.add(node);
                                             orderedArray.add(node);
                                         }
+                                        arrayNode.remove(index);
                                         break;
                                     } else {
                                         //the node exist in target node
@@ -119,6 +129,15 @@ public class JsonUtil {
             }
         }
 
+    }
+
+    public static JsonNode findNodeFromTarget(ArrayNode targetArr, JsonNode fromNode, String field) {
+        for (JsonNode jsonNode : targetArr) {
+            if (jsonNode.get(field).asText().equals(fromNode.get(field).asText())) {
+                return jsonNode;
+            }
+        }
+        return null;
     }
 
     public static void copyFromTo(JsonNode from, JsonNode to) {
@@ -172,8 +191,10 @@ public class JsonUtil {
     }
 
     public static void main(String[] args) throws JsonProcessingException {
-        String buffer = "{\"spec\":{\"$setElementOrder/ports\":[{\"port\":80},{\"port\":3306}],\"ports\":[{\"port\":3306,\"nodePort\":null}]}}";
-        String targetJson = "{\"metadata\":{\"uid\":\"45a86a49-57f1-4837-9761-8328b2aec993\",\"managedFields\":[{\"apiVersion\":\"v1\",\"manager\":\"kubectl-client-side-apply\",\"fieldsV1\":{\"f:metadata\":{\"f:annotations\":{\"f:ssc/external-net-id\":{},\"f:ssc/network-id\":{},\"f:kubectl.kubernetes.io/last-applied-configuration\":{},\".\":{},\"f:ssc/subnet-id\":{}},\"f:labels\":{\"f:app\":{},\"f:name\":{},\".\":{}}},\"f:spec\":{\"f:type\":{},\"f:selector\":{\"f:app\":{},\".\":{}},\"f:sessionAffinity\":{},\"f:externalTrafficPolicy\":{},\"f:ports\":{\"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\":{\"f:port\":{},\"f:targetPort\":{},\"f:protocol\":{},\"f:name\":{},\".\":{}},\"k:{\\\"port\\\":3306,\\\"protocol\\\":\\\"TCP\\\"}\":{\"f:port\":{},\"f:targetPort\":{},\"f:protocol\":{},\"f:name\":{},\".\":{}},\".\":{}}}},\"time\":\"2022-01-19T01:45:02Z\",\"operation\":\"Update\",\"fieldsType\":\"FieldsV1\"}],\"resourceVersion\":\"29802526\",\"name\":\"svc-test3\",\"namespace\":\"wdh\",\"creationTimestamp\":\"2022-01-19T01:45:02Z\",\"annotations\":{\"ssc/subnet-id\":\"c07fda56-a0dd-4717-9697-25294d558f91\",\"ssc/external-net-id\":\"cfed230f-eb66-4f47-93ac-d3550a4774fa\",\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"v1\\\",\\\"kind\\\":\\\"Service\\\",\\\"metadata\\\":{\\\"annotations\\\":{\\\"ssc/external-net-id\\\":\\\"cfed230f-eb66-4f47-93ac-d3550a4774fa\\\",\\\"ssc/network-id\\\":\\\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\\\",\\\"ssc/subnet-id\\\":\\\"c07fda56-a0dd-4717-9697-25294d558f91\\\"},\\\"labels\\\":{\\\"app\\\":\\\"svc-test3\\\",\\\"name\\\":\\\"svc\\\"},\\\"name\\\":\\\"svc-test3\\\",\\\"namespace\\\":\\\"wdh\\\"},\\\"spec\\\":{\\\"ports\\\":[{\\\"name\\\":\\\"http\\\",\\\"port\\\":80,\\\"targetPort\\\":3306},{\\\"name\\\":\\\"mysql-port\\\",\\\"port\\\":3306,\\\"targetPort\\\":3306}],\\\"selector\\\":{\\\"app\\\":\\\"svc-test\\\"},\\\"type\\\":\\\"NodePort\\\"}}\\n\",\"ssc/network-id\":\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\"},\"selfLink\":\"/api/v1/namespaces/wdh/services/svc-test3\",\"labels\":{\"app\":\"svc-test3\",\"name\":\"svc\"}},\"apiVersion\":\"v1\",\"kind\":\"Service\",\"spec\":{\"clusterIPs\":[\"172.22.7.95\"],\"sessionAffinity\":\"None\",\"selector\":{\"app\":\"svc-test\"},\"externalTrafficPolicy\":\"Cluster\",\"ports\":[{\"protocol\":\"TCP\",\"port\":80,\"name\":\"http\",\"targetPort\":3306,\"nodePort\":46930},{\"protocol\":\"TCP\",\"port\":3306,\"name\":\"mysql-port\",\"targetPort\":3306,\"nodePort\":40467}],\"type\":\"NodePort\",\"clusterIP\":\"172.22.7.95\"},\"status\":{\"loadBalancer\":{}}}";
-        applyStrategicJsonPatchToJson(buffer, new ObjectMapper().readTree(targetJson));
+       // String buffer = "{\"spec\":{\"$setElementOrder/ports\":[{\"port\":80},{\"port\":3306}],\"ports\":[{\"port\":3306,\"nodePort\":null}]}}";
+        //String targetJson = "{\"metadata\":{\"uid\":\"45a86a49-57f1-4837-9761-8328b2aec993\",\"managedFields\":[{\"apiVersion\":\"v1\",\"manager\":\"kubectl-client-side-apply\",\"fieldsV1\":{\"f:metadata\":{\"f:annotations\":{\"f:ssc/external-net-id\":{},\"f:ssc/network-id\":{},\"f:kubectl.kubernetes.io/last-applied-configuration\":{},\".\":{},\"f:ssc/subnet-id\":{}},\"f:labels\":{\"f:app\":{},\"f:name\":{},\".\":{}}},\"f:spec\":{\"f:type\":{},\"f:selector\":{\"f:app\":{},\".\":{}},\"f:sessionAffinity\":{},\"f:externalTrafficPolicy\":{},\"f:ports\":{\"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\":{\"f:port\":{},\"f:targetPort\":{},\"f:protocol\":{},\"f:name\":{},\".\":{}},\"k:{\\\"port\\\":3306,\\\"protocol\\\":\\\"TCP\\\"}\":{\"f:port\":{},\"f:targetPort\":{},\"f:protocol\":{},\"f:name\":{},\".\":{}},\".\":{}}}},\"time\":\"2022-01-19T01:45:02Z\",\"operation\":\"Update\",\"fieldsType\":\"FieldsV1\"}],\"resourceVersion\":\"29802526\",\"name\":\"svc-test3\",\"namespace\":\"wdh\",\"creationTimestamp\":\"2022-01-19T01:45:02Z\",\"annotations\":{\"ssc/subnet-id\":\"c07fda56-a0dd-4717-9697-25294d558f91\",\"ssc/external-net-id\":\"cfed230f-eb66-4f47-93ac-d3550a4774fa\",\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"v1\\\",\\\"kind\\\":\\\"Service\\\",\\\"metadata\\\":{\\\"annotations\\\":{\\\"ssc/external-net-id\\\":\\\"cfed230f-eb66-4f47-93ac-d3550a4774fa\\\",\\\"ssc/network-id\\\":\\\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\\\",\\\"ssc/subnet-id\\\":\\\"c07fda56-a0dd-4717-9697-25294d558f91\\\"},\\\"labels\\\":{\\\"app\\\":\\\"svc-test3\\\",\\\"name\\\":\\\"svc\\\"},\\\"name\\\":\\\"svc-test3\\\",\\\"namespace\\\":\\\"wdh\\\"},\\\"spec\\\":{\\\"ports\\\":[{\\\"name\\\":\\\"http\\\",\\\"port\\\":80,\\\"targetPort\\\":3306},{\\\"name\\\":\\\"mysql-port\\\",\\\"port\\\":3306,\\\"targetPort\\\":3306}],\\\"selector\\\":{\\\"app\\\":\\\"svc-test\\\"},\\\"type\\\":\\\"NodePort\\\"}}\\n\",\"ssc/network-id\":\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\"},\"selfLink\":\"/api/v1/namespaces/wdh/services/svc-test3\",\"labels\":{\"app\":\"svc-test3\",\"name\":\"svc\"}},\"apiVersion\":\"v1\",\"kind\":\"Service\",\"spec\":{\"clusterIPs\":[\"172.22.7.95\"],\"sessionAffinity\":\"None\",\"selector\":{\"app\":\"svc-test\"},\"externalTrafficPolicy\":\"Cluster\",\"ports\":[{\"protocol\":\"TCP\",\"port\":80,\"name\":\"http\",\"targetPort\":3306,\"nodePort\":46930},{\"protocol\":\"TCP\",\"port\":3306,\"name\":\"mysql-port\",\"targetPort\":3306,\"nodePort\":40467}],\"type\":\"NodePort\",\"clusterIP\":\"172.22.7.95\"},\"status\":{\"loadBalancer\":{}}}";
+        String mergeString = "{\"spec\":{\"$setElementOrder/ports\":[{\"port\":82},{\"port\":80},{\"port\":3306}],\"ports\":[{\"name\":\"w2\",\"port\":82},{\"nodePort\":null,\"port\":80}]}}";
+        String originString = "{\"metadata\":{\"uid\":\"9efe7c72-09f8-41a7-93fd-aed252fa04ee\",\"managedFields\":[{\"apiVersion\":\"v1\",\"manager\":\"kubectl-client-side-apply\",\"fieldsV1\":{\"f:metadata\":{\"f:annotations\":{\"f:ssc/external-net-id\":{},\"f:ssc/network-id\":{},\"f:kubectl.kubernetes.io/last-applied-configuration\":{},\".\":{},\"f:ssc/subnet-id\":{}},\"f:labels\":{\"f:app\":{},\"f:name\":{},\".\":{}}},\"f:spec\":{\"f:type\":{},\"f:selector\":{\"f:app\":{},\".\":{}},\"f:sessionAffinity\":{},\"f:externalTrafficPolicy\":{},\"f:ports\":{\"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\":{\"f:port\":{},\"f:targetPort\":{},\"f:protocol\":{},\"f:name\":{},\".\":{}},\"k:{\\\"port\\\":3306,\\\"protocol\\\":\\\"TCP\\\"}\":{\"f:port\":{},\"f:targetPort\":{},\"f:protocol\":{},\"f:name\":{},\".\":{}},\".\":{}}}},\"time\":\"2022-01-19T08:23:10Z\",\"operation\":\"Update\",\"fieldsType\":\"FieldsV1\"}],\"resourceVersion\":\"30204315\",\"name\":\"svc-test3\",\"namespace\":\"wdh\",\"creationTimestamp\":\"2022-01-19T08:23:10Z\",\"annotations\":{\"ssc/subnet-id\":\"c07fda56-a0dd-4717-9697-25294d558f91\",\"ssc/external-net-id\":\"cfed230f-eb66-4f47-93ac-d3550a4774fa\",\"kubectl.kubernetes.io/last-applied-configuration\":\"{\\\"apiVersion\\\":\\\"v1\\\",\\\"kind\\\":\\\"Service\\\",\\\"metadata\\\":{\\\"annotations\\\":{\\\"ssc/external-net-id\\\":\\\"cfed230f-eb66-4f47-93ac-d3550a4774fa\\\",\\\"ssc/network-id\\\":\\\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\\\",\\\"ssc/subnet-id\\\":\\\"c07fda56-a0dd-4717-9697-25294d558f91\\\"},\\\"labels\\\":{\\\"app\\\":\\\"svc-test3\\\",\\\"name\\\":\\\"svc\\\"},\\\"name\\\":\\\"svc-test3\\\",\\\"namespace\\\":\\\"wdh\\\"},\\\"spec\\\":{\\\"ports\\\":[{\\\"name\\\":\\\"http\\\",\\\"port\\\":80,\\\"targetPort\\\":3306},{\\\"name\\\":\\\"mysql-port\\\",\\\"port\\\":3306,\\\"targetPort\\\":3306}],\\\"selector\\\":{\\\"app\\\":\\\"svc-test\\\"},\\\"type\\\":\\\"NodePort\\\"}}\\n\",\"ssc/network-id\":\"acf6d425-6449-4d1a-b91a-f5fbf0bbd18f\"},\"selfLink\":\"/api/v1/namespaces/wdh/services/svc-test3\",\"labels\":{\"app\":\"svc-test3\",\"name\":\"svc\"}},\"apiVersion\":\"v1\",\"kind\":\"Service\",\"spec\":{\"clusterIPs\":[\"172.22.7.95\"],\"sessionAffinity\":\"None\",\"selector\":{\"app\":\"svc-test\"},\"externalTrafficPolicy\":\"Cluster\",\"ports\":[{\"protocol\":\"TCP\",\"port\":80,\"name\":\"http\",\"targetPort\":3306,\"nodePort\":43744},{\"protocol\":\"TCP\",\"port\":3306,\"name\":\"mysql-port\",\"targetPort\":3306,\"nodePort\":48047}],\"type\":\"NodePort\",\"clusterIP\":\"172.22.7.95\"},\"status\":{\"loadBalancer\":{}}}";
+        applyStrategicJsonPatchToJson(mergeString, new ObjectMapper().readTree(originString));
     }
 }
